@@ -1,4 +1,5 @@
 ﻿$(function () {
+    var hub;
     var colors = ['black', 'red', 'green', 'blue', 'yellow', 'magenta', 'white'];
     var canvas = $('#canvas');
     var colorElement = $('#color');
@@ -34,33 +35,39 @@
         ctx.clearRect(0, 0, canvas.width(), canvas.height());
     }
 
+    function updateAll(points) {
+        if (!points) {
+            return;
+        }
+
+        for (var x = 0; x < points.length; x++) {
+            var row = points[x];
+            for (y = 0; y < row.length; y++) {
+                var color = row[y];
+                if (color) {
+                    setPoint(x, y, color);
+                }
+            }
+        }
+    }
+
     $('#clear').click(clearPoints);
+    $('#getUpdate').click(function () {
+        if (hub) {
+            hub.server.getUpdate()
+                .then(updateAll);
+        }
+    });
 
 
     $('#useIwcSignalR').click(function () {
         $('#useSignalR').hide();
 
-        var hub = SJ.iwc.SignalR.getHubProxy('drawingBoard', {
+        hub = SJ.iwc.SignalR.getHubProxy('drawingBoard', {
             client: {
                 clear: clearPoints,
-                drawPoint: function (x, y, color) {
-                    setPoint(x, y, color);
-                },
-                update: function (points) {
-                    if (!points) {
-                        return;
-                    }
-
-                    for (var x = 0; x < points.length; x++) {
-                        var row = points[x];
-                        for (y = 0; y < row.length; y++) {
-                            var color = row[y];
-                            if (color) {
-                                setPoint(x, y, color);
-                            }
-                        }
-                    }
-                }
+                drawPoint: setPoint,
+                update: updateAll
             }
         });
 
@@ -98,7 +105,7 @@
     $('#useSignalR').click(function () {
         $('#useIwcSignalR').hide();
 
-        var hub = $.connection.drawingBoard;
+        hub = $.connection.drawingBoard;
         hub.state.color = colorElement.val();
         var connected = false;
 
@@ -124,25 +131,9 @@
 
         hub.client.clear = clearPoints;
 
-        hub.client.drawPoint = function (x, y, color) {
-            setPoint(x, y, color);
-        }
+        hub.client.drawPoint = setPoint;
 
-        hub.client.update = function (points) {
-            if (!points) {
-                return;
-            }
-
-            for (var x = 0; x < points.length; x++) {
-                var row = points[x];
-                for (y = 0; y < row.length; y++) {
-                    var color = row[y];
-                    if (color) {
-                        setPoint(x, y, color);
-                    }
-                }
-            }
-        }
+        hub.client.update = updateAll;
 
         $.connection.hub.start()
             .done(function () {

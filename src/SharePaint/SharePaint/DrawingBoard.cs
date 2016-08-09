@@ -35,7 +35,7 @@ namespace SharePaint
             }
 
             int color = 0;
-            int.TryParse(Clients.Caller.color,out color);
+            int.TryParse(Clients.Caller.color, out color);
             _buffer[x, y] = color;
 
 
@@ -54,6 +54,10 @@ namespace SharePaint
             return Clients.Caller.Update(_buffer);
         }
 
+        public int[,] GetUpdate()
+        {
+            return _buffer;
+        }
 
 
         private static int[,] GetEmptyBuffer()
