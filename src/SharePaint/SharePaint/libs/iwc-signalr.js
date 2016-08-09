@@ -10,6 +10,8 @@
     var proxyClientsConfig = new SJ.iwc.SharedData(lsPrefix + 'CLIENTS');
 
     var iwcSignalRVersion = '0.1';
+    var startArgs;
+
     SJ.localStorage.setVersion(lsPrefix, iwcSignalRVersion);
 
     //region Utility functions
@@ -55,7 +57,7 @@
     //region Hub starting
     function start() {
         init();
-        var startArgs = Array.prototype.slice.call(arguments, 0);
+        startArgs = Array.prototype.slice.call(arguments, 0);
         if (isConnectionOwner) {
             var result = $.connection.hub.start.apply($.connection.hub, startArgs);
             onHubDeferredStart(result);
@@ -94,6 +96,17 @@
             return result.promise();
         }
     };
+
+    function restart(callback) {
+        if (isConnectionOwner) {
+            $.connection.hub.stopConnection(function() {
+                if (callback) {
+                    callback();
+                }
+                $.connection.hub.startConnection(startArgs);
+            });
+        }
+    }
 
     function updateDeferredStartResult() {
         var startedResult = getConnectionStartedResult();
@@ -477,10 +490,11 @@
     var IWCSignalR = {
         getHubProxy: getHubProxy,
         start: start,
+        restart: restart,
         getState: getState,
         getConnectionId: getConnectionId,
-        isConnectionOwner: function() {
-             return isConnectionOwner;
+        isConnectionOwner: function () {
+            return isConnectionOwner;
         },
         getConnectionOwnerWindowId: getConnectionOwnerWindowId
     };

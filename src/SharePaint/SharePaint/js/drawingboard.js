@@ -140,4 +140,10 @@
                 connected = true;
             });
     });
+
+    $('#restartIwcSignalR').click(function () {
+        SJ.iwc.SignalR.restart(function () {
+            console.log('restart...');
+        });
+    });
 });
