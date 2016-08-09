@@ -37,57 +37,116 @@
     $('#clear').click(clearPoints);
 
 
-    var hub = SJ.iwc.SignalR.getHubProxy('drawingBoard', {
-        client: {
-            clear: clearPoints,
-            drawPoint: function (x, y, color) {
-                setPoint(x, y, color);
-            },
-            update: function (points) {
-                if (!points) {
-                    return;
-                }
+    $('#useIwcSignalR').click(function () {
+        $('#useSignalR').hide();
 
-                for (var x = 0; x < points.length; x++) {
-                    var row = points[x];
-                    for (y = 0; y < row.length; y++) {
-                        var color = row[y];
-                        if (color) {
-                            setPoint(x, y, color);
+        var hub = SJ.iwc.SignalR.getHubProxy('drawingBoard', {
+            client: {
+                clear: clearPoints,
+                drawPoint: function (x, y, color) {
+                    setPoint(x, y, color);
+                },
+                update: function (points) {
+                    if (!points) {
+                        return;
+                    }
+
+                    for (var x = 0; x < points.length; x++) {
+                        var row = points[x];
+                        for (y = 0; y < row.length; y++) {
+                            var color = row[y];
+                            if (color) {
+                                setPoint(x, y, color);
+                            }
                         }
                     }
                 }
             }
-        }
-    });
-
-
-    SJ.iwc.SignalR.getState().color = colorElement.val();
-    var connected = false;
-
-    colorElement.change(function () {
-        SJ.iwc.SignalR.getState().color = $(this).val();
-    });
-
-
-    canvas.mousemove(function (e) {
-        if (buttonPressed && connected) {
-            hub.server.broadcastPoint(
-                Math.round(e.offsetX),
-                Math.round(e.offsetY)
-            );
-        }
-    });
-
-    $('#clear').click(function () {
-        if (connected) {
-            hub.server.broadcastClear();
-        }
-    });
-
-
-    SJ.iwc.SignalR.start()
-        .done(function () {
-            connected = true;
         });
+
+
+        SJ.iwc.SignalR.getState().color = colorElement.val();
+        var connected = false;
+
+        colorElement.change(function () {
+            SJ.iwc.SignalR.getState().color = $(this).val();
+        });
+
+
+        canvas.mousemove(function (e) {
+            if (buttonPressed && connected) {
+                hub.server.broadcastPoint(
+                    Math.round(e.offsetX),
+                    Math.round(e.offsetY)
+                );
+            }
+        });
+
+        $('#clear').click(function () {
+            if (connected) {
+                hub.server.broadcastClear();
+            }
+        });
+
+
+        SJ.iwc.SignalR.start()
+            .done(function () {
+                connected = true;
+            });
+    });
+
+    $('#useSignalR').click(function () {
+        $('#useIwcSignalR').hide();
+
+        var hub = $.connection.drawingBoard;
+        hub.state.color = colorElement.val();
+        var connected = false;
+
+        colorElement.change(function () {
+            hub.state.color = $(this).val();
+        });
+
+
+        canvas.mousemove(function (e) {
+            if (buttonPressed && connected) {
+                hub.server.broadcastPoint(
+                    Math.round(e.offsetX),
+                    Math.round(e.offsetY)
+                );
+            }
+        });
+
+        $('#clear').click(function () {
+            if (connected) {
+                hub.server.broadcastClear();
+            }
+        });
+
+        hub.client.clear = clearPoints;
+
+        hub.client.drawPoint = function (x, y, color) {
+            setPoint(x, y, color);
+        }
+
+        hub.client.update = function (points) {
+            if (!points) {
+                return;
+            }
+
+            for (var x = 0; x < points.length; x++) {
+                var row = points[x];
+                for (y = 0; y < row.length; y++) {
+                    var color = row[y];
+                    if (color) {
+                        setPoint(x, y, color);
+                    }
+                }
+            }
+        }
+
+        $.connection.hub.start()
+            .done(function () {
+                connected = true;
+            });
+    });
 });
